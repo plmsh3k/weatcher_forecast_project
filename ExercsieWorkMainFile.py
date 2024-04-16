@@ -122,12 +122,6 @@ def is_future_date(date_str):
     return date > today
 
 
-def is_future_date(date_str):
-    today = datetime.datetime.now()
-    date = datetime.datetime.strptime(date_str, '%Y-%m-%d')
-    return date > today
-
-
 def is_more_than_one_year_ago(date_str):
     today = datetime.datetime.now()
     one_year_ago = today - datetime.timedelta(days=365)
