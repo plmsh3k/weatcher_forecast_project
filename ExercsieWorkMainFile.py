@@ -3,30 +3,36 @@ import matplotlib.pyplot as plt
 import datetime
 import random
 
+
 class Forecast:
     def __init__(self, data):
-        self.data = data
+        if data is None:
+            raise ValueError("No data provided for weather information.")
+        self.forecast_day = data['forecast']['forecastday'][0]['day']
+        self.forecast_hours = data['forecast']['forecastday'][0]['hour']
+        self.display()
 
     def display(self):
         raise NotImplementedError("Subclasses must implement this method.")
 
 class BasicForecast(Forecast):
     def display(self):
-        print(f"Today's temperature: {self.data['day']['avgtemp_c']}°C")
-        print(f"Conditions: {self.data['day']['condition']['text']}")
+        print(f"Today's temperature: {self.forecast_day['avgtemp_c']}°C")
+        print(f"Conditions: {self.forecast_day['condition']['text']}")
 
 class AdvancedForecast(Forecast):
     def display(self):
-        print("Weather Trend Based on Past Data:")
-        for hour in self.data['hour']:
+        print("Today's temperature:")
+        for hour in self.forecast_hours:
             print(f"{hour['time'][11:]} - Temp: {hour['temp_c']}°C, Condition: {hour['condition']['text']}")
 
 class PremiumForecast(Forecast):
     def display(self):
         print("Detailed Forecast with Predictive Analysis:")
-        print(f"Today's temperature: {self.data['day']['avgtemp_c']}°C")
-        for hour in self.data['hour']:
-            print(f"{hour['time'][11:]} - Temp: {hour['temp_c']}°C, Predicted Feels Like: {hour['feelslike_c']}°C")
+        print(f"Today's temperature: {self.forecast_day['avgtemp_c']}°C")
+        for hour in self.forecast_hours:
+            feels_like = hour.get('feelslike_c', 'N/A')
+            print(f"{hour['time'][11:]} - Temp: {hour['temp_c']}°C, Feels Like: {feels_like}°C")
 
 
 class WeatherAPI:
@@ -87,7 +93,6 @@ class WeatherData:
         current_date = datetime.datetime.now()
         target_date = datetime.datetime.strptime(target_date_str, '%Y-%m-%d')
 
-        # Calculate the difference in days
         day_difference = (target_date - current_date).days
 
         if day_difference < 0:
@@ -114,12 +119,6 @@ def validate_date(date_str):
         return True
     except ValueError:
         return False
-
-
-def is_future_date(date_str):
-    today = datetime.datetime.now()
-    date = datetime.datetime.strptime(date_str, '%Y-%m-%d')
-    return date > today
 
 
 def is_future_date(date_str):
@@ -161,9 +160,25 @@ class Application:
                 elif is_more_than_one_year_ago(date):
                     print("historical data only available up until 1 year in the past")
                 else:
+                    print("Select Forecast Type:")
+                    print("a: Basic Forecast")
+                    print("b: Advanced Forecast")
+                    print("c: Premium Forecast")
+
+                    forecast_type = input("Enter forecast type: ")
                     weather_data = self.api.get_weather_by_date(date)
-                    weather = WeatherData(weather_data)
-                    weather.display_basic_info()
+
+                    if forecast_type == "a":
+                        forecast = BasicForecast(weather_data)
+                    elif forecast_type == "b":
+                        forecast = AdvancedForecast(weather_data)
+                    elif forecast_type == "c":
+                        forecast = PremiumForecast(weather_data)
+                    else:
+                        print("Invalid forecast type selected.")
+                        return
+
+                    forecast.display()
             elif choice == '2':
                 date = input("Enter the date for hourly details (YYYY-MM-DD): ")
                 if not validate_date(date):
